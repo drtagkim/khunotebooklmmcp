@@ -208,7 +208,11 @@ export class NotebookLMClient {
         const params = [title, null, null, [2], [1, null, null, null, null, null, null, null, null, null, [1]]];
         const body = await this._buildRequestBody(RPC_IDS.CREATE_NOTEBOOK, params);
         const response = await this.client.post(this._buildUrl(RPC_IDS.CREATE_NOTEBOOK), body);
-        return this._parseBatchResponse(response.data);
+        const res = this._parseBatchResponse(response.data);
+        if (res && Array.isArray(res) && res.length > 2) {
+            return { id: res[2], title: res[0] };
+        }
+        return { success: false, raw: res };
     }
 
     async renameNotebook(notebookId: string, newTitle: string): Promise<any> {
@@ -216,6 +220,32 @@ export class NotebookLMClient {
         const params = [notebookId, [[null, null, null, [null, newTitle]]]];
         const body = await this._buildRequestBody(RPC_IDS.RENAME_NOTEBOOK, params);
         // Path should include notebookId for rename
+        const response = await this.client.post(this._buildUrl(RPC_IDS.RENAME_NOTEBOOK, `/notebook/${notebookId}`), body);
+        const res = this._parseBatchResponse(response.data);
+        if (res && Array.isArray(res) && res.length > 2) {
+            return { id: res[2], title: res[0] };
+        }
+        return { success: false, raw: res };
+    }
+
+    async configureChat(notebookId: string, goal: string = "default", customPrompt?: string): Promise<any> {
+        // Goals: 1=Default, 2=Summary, 3=Explanation, 4=Critique, 5=Custom
+        let goalCode = 1;
+        if (goal === "summary") goalCode = 2;
+        if (goal === "explanation") goalCode = 3;
+        if (goal === "critique") goalCode = 4;
+        if (goal === "custom") goalCode = 5;
+
+        // Structure: [goalCode, customPrompt?]
+        const goalSetting = (goal === "custom" && customPrompt) ? [goalCode, customPrompt] : [goalCode];
+
+        // Chat settings is nested deep in the update structure
+        // [notebook_id, [[null, null, null, null, null, null, null, [[goalSetting], [1]]]]]
+        // The [1] is length code (1=default)
+        const chatSettings = [goalSetting, [1]];
+        const params = [notebookId, [[null, null, null, null, null, null, null, chatSettings]]];
+
+        const body = await this._buildRequestBody(RPC_IDS.RENAME_NOTEBOOK, params);
         const response = await this.client.post(this._buildUrl(RPC_IDS.RENAME_NOTEBOOK, `/notebook/${notebookId}`), body);
         return this._parseBatchResponse(response.data);
     }
@@ -225,7 +255,11 @@ export class NotebookLMClient {
         const params = [[notebookId], [2]];
         const body = await this._buildRequestBody(RPC_IDS.DELETE_NOTEBOOK, params);
         const response = await this.client.post(this._buildUrl(RPC_IDS.DELETE_NOTEBOOK), body);
-        return this._parseBatchResponse(response.data);
+        const res = this._parseBatchResponse(response.data);
+        if (res && Array.isArray(res) && res[0] === notebookId) {
+            return { success: true, id: res[0] };
+        }
+        return { success: false, raw: res };
     }
 
     async startResearch(notebookId: string, query: string, source: string = 'web', mode: string = 'fast'): Promise<any> {
@@ -298,17 +332,56 @@ export class NotebookLMClient {
 
     async importResearchSources(notebookId: string, taskId: string, sources: any[]): Promise<any> {
         const sourceArray = sources.map(src => [null, null, [src[0], src[1]], null, null, null, null, null, null, null, 2]);
-        const params = [null, [1], taskId, notebookId, sourceArray];
+        const params = [null, [taskId], [1], notebookId, sourceArray];
         const body = await this._buildRequestBody(RPC_IDS.IMPORT_RESEARCH, params);
-        const response = await this.client.post(this._buildUrl(RPC_IDS.IMPORT_RESEARCH), body);
+        const response = await this.client.post(this._buildUrl(RPC_IDS.IMPORT_RESEARCH, `/notebook/${notebookId}`), body);
         return this._parseBatchResponse(response.data);
+    }
+
+    async syncDriveSource(notebookId: string, sourceId: string): Promise<any> {
+        // Params: [null, [source_id], [2]]
+        const params = [null, [sourceId], [2]];
+        const body = await this._buildRequestBody(RPC_IDS.SYNC_DRIVE, params);
+        // Path should include notebookId
+        const response = await this.client.post(this._buildUrl(RPC_IDS.SYNC_DRIVE, `/notebook/${notebookId}`), body);
+        const result = this._parseBatchResponse(response.data);
+
+        // Parse result for sync timestamp
+        let syncedAt = null;
+        if (result && Array.isArray(result) && result.length > 3) {
+            const syncInfo = result[3];
+            if (Array.isArray(syncInfo) && syncInfo.length > 1) {
+                const ts = syncInfo[1];
+                if (Array.isArray(ts) && ts.length > 0) {
+                    syncedAt = ts[0];
+                }
+            }
+        }
+
+        return {
+            success: true,
+            source_id: sourceId,
+            synced_at: syncedAt
+        };
+    }
+
+    async checkSourceFreshness(notebookId: string, sourceIds: string[]): Promise<any> {
+        // Params: [notebook_id, [source_id_1, source_id_2, ...]]
+        const params = [notebookId, sourceIds];
+        const body = await this._buildRequestBody(RPC_IDS.CHECK_FRESHNESS, params);
+        const response = await this.client.post(this._buildUrl(RPC_IDS.CHECK_FRESHNESS, `/notebook/${notebookId}`), body);
+        const result = this._parseBatchResponse(response.data);
+
+        // Result is map of source_id -> status
+        // We'll return it as is, or parsed slightly
+        return result;
     }
 
     async addSource(notebookId: string, type: 'text' | 'url' | 'drive', content: string, title?: string): Promise<any> {
         let sourceData: any[];
 
         if (type === 'text') {
-            // Correct Text Structure: [null, [title, text], null, 2, null, null, null, null, null, null, 1]
+            // Correct Text Structure: [null, [title || "Pasted Text", content], null, 2, null, null, null, null, null, null, 1]
             sourceData = [null, [title || "Pasted Text", content], null, 2, null, null, null, null, null, null, 1];
         } else if (type === 'url') {
             const isYoutube = content.toLowerCase().includes("youtube.com") || content.toLowerCase().includes("youtu.be");
@@ -320,15 +393,29 @@ export class NotebookLMClient {
                 sourceData = [null, null, [content], null, null, null, null, null, null, null, 1];
             }
         } else {
-            // Correct Drive Structure: [[document_id, mime_type, 1, title], null, null, null, null, null, null, null, null, null, 1]
+            // Correct Drive Structure: [[content, mime_type, 1, title], null, null, null, null, null, null, null, null, null, 1]
             sourceData = [[content, "application/vnd.google-apps.document", 1, title || "Drive Doc"], null, null, null, null, null, null, null, null, null, 1];
         }
 
         // Common Add Wrapper: [[sourceData], notebook_id, [2], [1, null, null, null, null, null, null, null, null, null, [1]]]
         const params = [[sourceData], notebookId, [2], [1, null, null, null, null, null, null, null, null, null, [1]]];
         const body = await this._buildRequestBody(RPC_IDS.ADD_SOURCE, params);
+        // Include notebook path
         const response = await this.client.post(this._buildUrl(RPC_IDS.ADD_SOURCE, `/notebook/${notebookId}`), body);
-        return this._parseBatchResponse(response.data);
+        const res = this._parseBatchResponse(response.data);
+
+        if (res && Array.isArray(res) && res.length > 0) {
+            // Structure: [[[["UUID"],"Title",...]]]
+            if (Array.isArray(res[0]) && Array.isArray(res[0][0])) {
+                const sourceInfo = res[0][0];
+                const id = Array.isArray(sourceInfo[0]) ? sourceInfo[0][0] : sourceInfo[0];
+                const title = sourceInfo[1];
+                return { source_id: id, title: title, type: type };
+            }
+            // Fallback
+            return { source_id: res[0], title: res[1], type: type };
+        }
+        return { success: false, raw: res };
     }
 
     async renameSource(notebookId: string, sourceId: string, newTitle: string): Promise<any> {

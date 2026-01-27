@@ -64,28 +64,31 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         tools: [
             {
                 name: "manage_notebook",
-                description: "Create, rename, delete, list, or get details of a notebook.",
+                description: "Create, rename, delete, list, get details, or configure chat for a notebook.",
                 inputSchema: {
                     type: "object",
                     properties: {
-                        action: { type: "string", enum: ["list", "get", "create", "rename", "delete"] },
+                        action: { type: "string", enum: ["list", "get", "create", "rename", "delete", "configure_chat"], description: "Action to perform" },
                         notebook_id: { type: "string" },
                         title: { type: "string" },
+                        goal: { type: "string", enum: ["default", "summary", "explanation", "critique", "custom"], description: "Chat goal for configure_chat" },
+                        custom_prompt: { type: "string", description: "Custom prompt when goal is 'custom'" },
                     },
                     required: ["action"],
                 },
             },
             {
                 name: "manage_source",
-                description: "Add, rename, or delete sources in a notebook.",
+                description: "Add, rename, delete, sync, or check freshness of sources in a notebook.",
                 inputSchema: {
                     type: "object",
                     properties: {
-                        action: { type: "string", enum: ["add", "rename", "delete"], description: "Action to perform" },
+                        action: { type: "string", enum: ["add", "rename", "delete", "sync", "check_freshness"], description: "Action to perform" },
                         notebook_id: { type: "string" },
                         type: { type: "string", enum: ["text", "url", "drive"], description: "Required for 'add' action" },
                         content: { type: "string", description: "Content for 'add' action" },
-                        source_id: { type: "string", description: "Required for 'rename' and 'delete' actions" },
+                        source_id: { type: "string", description: "Required for 'rename', 'delete', 'sync' actions" },
+                        source_ids: { type: "array", items: { type: "string" }, description: "Required for 'check_freshness' action" },
                         title: { type: "string", description: "Title for 'add' or 'rename' actions" },
                     },
                     required: ["action", "notebook_id"],
@@ -202,6 +205,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 if (action === "create") return { content: [{ type: "text", text: JSON.stringify(await ctx.client.createNotebook(title)) }] };
                 if (action === "rename") return { content: [{ type: "text", text: JSON.stringify(await ctx.client.renameNotebook(notebook_id, title)) }] };
                 if (action === "delete") return { content: [{ type: "text", text: JSON.stringify(await ctx.client.deleteNotebook(notebook_id)) }] };
+                if (action === "configure_chat") {
+                    const { goal, custom_prompt } = args as any;
+                    return { content: [{ type: "text", text: JSON.stringify(await ctx.client.configureChat(notebook_id, goal, custom_prompt)) }] };
+                }
                 break;
             }
             case "manage_source": {
@@ -222,6 +229,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 if (action === "delete") {
                     if (!source_id) throw new Error("Source ID is required for 'delete' action");
                     const result = await ctx.client.deleteSource(notebook_id, source_id);
+                    return { content: [{ type: "text", text: JSON.stringify(result) }] };
+                }
+
+                if (action === "sync") {
+                    if (!source_id) throw new Error("Source ID is required for 'sync' action");
+                    const result = await ctx.client.syncDriveSource(notebook_id, source_id);
+                    return { content: [{ type: "text", text: JSON.stringify(result) }] };
+                }
+
+                if (action === "check_freshness") {
+                    const argsAny = args as any;
+                    const ids = argsAny.source_ids || (argsAny.source_id ? [argsAny.source_id] : []);
+                    if (!ids || ids.length === 0) throw new Error("source_ids array (or single source_id) is required for 'check_freshness' action");
+                    const result = await ctx.client.checkSourceFreshness(notebook_id, ids);
                     return { content: [{ type: "text", text: JSON.stringify(result) }] };
                 }
 
