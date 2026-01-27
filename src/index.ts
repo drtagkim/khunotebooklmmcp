@@ -12,6 +12,7 @@ import fs from "fs";
 import path from "path";
 import { NotebookLMClient } from "./api-client.js";
 import { NotebookOrchestrator } from "./orchestrator.js";
+import { browserLogin } from "./browser-auth.js";
 
 const server = new Server(
     {
@@ -130,14 +131,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: "authenticate",
-                description: "Update authentication tokens (cookies, CSRF) for the session.",
+                description: "Update authentication tokens. Use method='browser' to open a browser for Google login, or method='manual' to provide cookies directly.",
                 inputSchema: {
                     type: "object",
                     properties: {
-                        cookies: { type: "string", description: "Cookie header from Chrome DevTools" },
-                        csrfToken: { type: "string", description: "at= token from network requests" },
+                        method: { type: "string", enum: ["manual", "browser"], description: "Authentication method: 'browser' opens Chrome for login, 'manual' requires cookies" },
+                        cookies: { type: "string", description: "Cookie header from Chrome DevTools (required for manual method)" },
+                        csrfToken: { type: "string", description: "at= token from network requests (optional, will be extracted automatically)" },
                     },
-                    required: ["cookies"],
+                    required: [],
                 },
             }
         ],
@@ -241,7 +243,35 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 return { content: [{ type: "text", text: JSON.stringify(result) }] };
             }
             case "authenticate": {
-                const { cookies, csrfToken } = args as any;
+                const { method, cookies, csrfToken } = args as any;
+
+                // Browser-based authentication
+                if (method === "browser" || (!method && !cookies)) {
+                    try {
+                        const tokens = await browserLogin();
+
+                        // Reset client to force reload with new tokens
+                        client = null;
+                        orchestrator = null;
+
+                        return {
+                            content: [{
+                                type: "text",
+                                text: `✅ Browser authentication successful!\n🍪 Cookies: ${Object.keys(tokens.cookies).length} extracted\n🔑 CSRF: ${tokens.csrf_token ? 'Extracted' : 'Not found'}\n📁 Saved to ~/.notebooklm-mcp/auth.json`
+                            }]
+                        };
+                    } catch (error: any) {
+                        return {
+                            content: [{ type: "text", text: `❌ Browser authentication failed: ${error.message}` }],
+                            isError: true,
+                        };
+                    }
+                }
+
+                // Manual authentication (cookies provided)
+                if (!cookies) {
+                    throw new Error("Cookies are required for manual authentication. Use method='browser' for automated login.");
+                }
 
                 // Save to cache
                 try {
@@ -255,7 +285,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                             if (k && v) acc[k] = v;
                             return acc;
                         }, {}),
-                        csrf_token: csrfToken.trim()
+                        csrf_token: csrfToken?.trim() || ''
                     };
                     fs.writeFileSync(authPath, JSON.stringify(authData, null, 2));
                     console.error("Saved new authentication tokens to cache");
@@ -263,9 +293,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     console.error("Failed to save auth cache:", e);
                 }
 
-                client = new NotebookLMClient({ cookies, csrfToken });
-                orchestrator = new NotebookOrchestrator(client);
-                // Update the running client instance next time it's needed
+                // Reset client to force reload with new tokens
                 client = null;
                 orchestrator = null;
 

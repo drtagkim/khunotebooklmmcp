@@ -13,9 +13,14 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.3",
     "@types/node": "^25.0.10",
+    "@types/ws": "^8.18.1",
     "axios": "^1.13.3",
+    "puppeteer": "^24.36.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
+    "ws": "^8.19.0",
     "zod": "^4.3.6"
   }
 }
