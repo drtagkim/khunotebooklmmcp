@@ -1,80 +1,88 @@
-# antigravity-notebooklm-mcp
+# Antigravity NotebookLM MCP
 
-MCP (Model Context Protocol) server for Google NotebookLM integration.
+Advanced Model Context Protocol (MCP) server for Google NotebookLM. 
+Built for AI agents to autonomously research, manage knowledge bases, and generate multimedia artifacts using Google's NotebookLM engine.
 
-## Features
+## 🚀 Key Features
 
-- **Notebook Management**: Create, rename, delete, and list notebooks
-- **Source Management**: Add text, URL, and Google Drive sources
-- **Query/Chat**: Ask questions about your notebook sources
-- **Deep Research**: Start web research and import discovered sources
-- **Mind Map Generation**: Generate mind maps from notebook sources
-- **Artifact Generation**: Create audio overviews, quizzes, and more
+*   **Robust Authentication**: 
+    *   **Browser Auth**: Safe, undetectable remote-debugging login flow (bypasses Google bot detection).
+    *   **Manual Auth**: Fallback for headless environments.
+*   **Deep Research**: Autonomous web research agent integration with automated source importing.
+*   **Full Notebook Management**: CRUD operations for Notebooks.
+*   **Advanced Source Control**: 
+    *   Add Text, URLs, PDFs, and Drive files.
+    *   **Sync**: Keep Drive sources up-to-date.
+    *   **Check Freshness**: Monitor source status.
+*   **Studio & Artifacts**: 
+    *   Generate **Audio Overviews**, **Mind Maps**, **Quizzes**, **Study Guides**.
+    *   Manage Studio: List and delete generated artifacts to keep projects clean.
+*   **Chat Configuration**: Set specific goals ("critique", "summary") and custom system prompts for your notebook.
 
-## Installation
+## 🛠️ Installation
 
 ```bash
 npm install
 npm run build
 ```
 
-## Authentication
+## 🔐 Authentication (The Antigravity Way)
 
-This server requires Google NotebookLM authentication cookies. You need to:
+This server overcomes common bot detection issues using a dedicated Chrome automation workflow.
 
-1. Open NotebookLM in Chrome
-2. Go to DevTools → Network tab
-3. Find any request to `notebooklm.google.com`
-4. Copy the `Cookie` header and the `at=` token from request body
-5. Use the `authenticate` tool to set your credentials
+### Method 1: Browser Auth (Recommended)
+This launches a specialized Chrome instance. You simply log in manually, and the MCP extracts the credentials automatically.
 
-Credentials are stored in `~/.notebooklm-mcp/auth.json`
+```bash
+# Run the auth helper
+node build/browser-auth.js
+```
 
-## Usage with Claude Desktop
+### Method 2: Manual Token
+If you are on a headless server, you can manually inject cookies:
 
-Add to your Claude Desktop config:
+1.  Open NotebookLM in your local browser.
+2.  Copy your `Cookie` header from DevTools (Network tab).
+3.  Use the `authenticate` tool in Claude/MCP with `method: "manual"`.
+
+Credentials are securely stored in `~/.notebooklm-mcp/auth.json`.
+
+## 📦 Usage with Claude Desktop
+
+Add to your `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "notebooklm": {
       "command": "node",
-      "args": ["/path/to/antigravity-notebooklm-mcp/build/index.js"]
+      "args": ["/absolute/path/to/antigravity-notebooklm-mcp/build/index.js"]
     }
   }
 }
 ```
 
-## Available Tools
+## 🧰 Available Tools
 
-| Tool | Description |
-|------|-------------|
-| `authenticate` | Update authentication tokens |
-| `manage_notebook` | Create, rename, delete, list, or get notebooks |
-| `manage_source` | Add, rename, or delete sources |
-| `query_notebook` | Ask questions about notebook sources |
-| `perform_deep_research` | Start web research and import sources |
-| `generate_artifact` | Generate mind maps and other artifacts |
+| Tool | Action | Description |
+|------|--------|-------------|
+| **manage_notebook** | `list`, `get`, `create`, `rename`, `delete`, `configure_chat` | Full lifecycle management. `configure_chat` sets prompts/goals. |
+| **manage_source** | `add`, `rename`, `delete`, `sync`, `check_freshness` | Manage knowledge sources. Supports syncing Drive files. |
+| **manage_studio** | `list`, `delete` | Manage generated artifacts (Audio, Video, Mind Maps). |
+| **query_notebook** | N/A | Ask questions grounded in your sources. |
+| **perform_deep_research** | N/A | Execute multi-step deep web research and import findings. |
+| **generate_artifact** | `audio`, `video`, `quiz`, `slides`, `mind_map`... | Generate multimedia content from your notes. |
+| **authenticate** | `browser`, `manual` | Update session credentials. |
 
-## Development
+## 🏗️ Architecture
 
-```bash
-# Build
-npm run build
+This project uses a direct reverse-engineered RPC client (`NotebookLMClient`) wrapped in an **MCP Server**. 
+It includes an **Orchestrator** layer for handling complex, multi-step asynchronous operations like Deep Research and Polling.
 
-# Run verification tests
-node build/verify-all.js
-```
+## ⚠️ Notes
 
-## Known Limitations
-
-- Deep Research may take 1-5 minutes to complete
-- Fast Research tasks may not immediately appear in poll results
-- Mind Map generation requires processed sources
-
-## Credits
-
-Based on reverse engineering of the NotebookLM API. Reference implementation: [jacob-bd/notebooklm-mcp](https://github.com/jacob-bd/notebooklm-mcp)
+*   **Deep Research** operations can take 3-5 minutes. The server handles polling, but be patient.
+*   **Audio Generation** is a heavy task; ensure you have enough sources before generating.
 
 ## License
 
