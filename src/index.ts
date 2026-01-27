@@ -144,6 +144,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                     },
                     required: [],
                 },
+            },
+            {
+                name: "manage_studio",
+                description: "List or delete studio artifacts (Audio Overviews, Mind Maps, etc.).",
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        action: { type: "string", enum: ["list", "delete"], description: "Action to perform" },
+                        notebook_id: { type: "string" },
+                        artifact_id: { type: "string", description: "Required for 'delete' action" },
+                    },
+                    required: ["action", "notebook_id"],
+                },
             }
         ],
     };
@@ -245,7 +258,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     const result = await ctx.client.checkSourceFreshness(notebook_id, ids);
                     return { content: [{ type: "text", text: JSON.stringify(result) }] };
                 }
-
                 throw new Error(`Unknown action: ${action}`);
             }
             case "perform_deep_research": {
@@ -257,6 +269,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 const { notebook_id, type, config } = args as any;
                 const result = await ctx.orchestrator!.generateArtifact(notebook_id, type, config);
                 return { content: [{ type: "text", text: JSON.stringify(result) }] };
+            }
+            case "manage_studio": {
+                const { action, notebook_id, artifact_id } = args as any;
+
+                if (action === "list") {
+                    const result = await ctx.client.listStudioArtifacts(notebook_id);
+                    return { content: [{ type: "text", text: JSON.stringify(result) }] };
+                }
+
+                if (action === "delete") {
+                    if (!artifact_id) throw new Error("Artifact ID is required for 'delete' action");
+                    const result = await ctx.client.deleteStudioArtifact(notebook_id, artifact_id);
+                    return { content: [{ type: "text", text: JSON.stringify(result) }] };
+                }
+
+                throw new Error(`Unknown action: ${action}`);
             }
             case "query_notebook": {
                 const { notebook_id, query, conversation_id } = args as any;

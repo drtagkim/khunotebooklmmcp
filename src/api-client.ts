@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { RPC_IDS } from './constants.js';
+import { RPC_IDS, RESEARCH_MODES, STUDIO_TYPE_CODES } from './constants.js';
 
 export interface AuthTokens {
     cookies: string;
@@ -212,6 +212,7 @@ export class NotebookLMClient {
         if (res && Array.isArray(res) && res.length > 2) {
             return { id: res[2], title: res[0] };
         }
+        console.log('DEBUG CREATE FAIL RAW:', response.data.substring(0, 500));
         return { success: false, raw: res };
     }
 
@@ -420,19 +421,74 @@ export class NotebookLMClient {
 
     async renameSource(notebookId: string, sourceId: string, newTitle: string): Promise<any> {
         // RPC_IDS.RENAME_NOTEBOOK (s0tc2d) is used for sources too if structure is similar
-        // But for sources, standard structure matches notebook rename with source ID
-        const params = [sourceId, [[null, null, null, [null, newTitle]]]];
-        const body = await this._buildRequestBody(RPC_IDS.RENAME_NOTEBOOK, params);
-        const response = await this.client.post(this._buildUrl(RPC_IDS.RENAME_NOTEBOOK, `/notebook/${notebookId}`), body);
+        // But sources usually use RENAME_SOURCE (b7Wfje)
+        // Correct Structure: [notebookId, [[sourceId, newTitle]], [2]]
+        const params = [notebookId, [[sourceId, newTitle]], [2]];
+        const body = await this._buildRequestBody(RPC_IDS.RENAME_SOURCE, params);
+        // Include notebook path
+        const response = await this.client.post(this._buildUrl(RPC_IDS.RENAME_SOURCE, `/notebook/${notebookId}`), body);
         return this._parseBatchResponse(response.data);
     }
 
     async deleteSource(notebookId: string, sourceId: string): Promise<any> {
-        // Correct Delete Source Structure: [[[source_id]], [2]]
-        const params = [[[sourceId]], [2]];
+        // Params: [notebook_id, [source_id]]
+        const params = [notebookId, [sourceId]];
         const body = await this._buildRequestBody(RPC_IDS.DELETE_SOURCE, params);
         const response = await this.client.post(this._buildUrl(RPC_IDS.DELETE_SOURCE, `/notebook/${notebookId}`), body);
         return this._parseBatchResponse(response.data);
+    }
+
+    async listStudioArtifacts(notebookId: string): Promise<any> {
+        // Poll Studio RPC: gArtLc
+        // Params: [notebook_id, [1, 3, 5, 6, 7, 9]] (all types)
+        const types = Object.values(STUDIO_TYPE_CODES);
+        const params = [notebookId, types];
+
+        const body = await this._buildRequestBody(RPC_IDS.POLL_STUDIO, params);
+        const response = await this.client.post(this._buildUrl(RPC_IDS.POLL_STUDIO, `/notebook/${notebookId}`), body);
+        const res = this._parseBatchResponse(response.data);
+
+        // Parse result list
+        const artifacts: any[] = [];
+        if (res && Array.isArray(res)) {
+            res.forEach((item: any) => {
+                // Item structure looks like: [id, type_code, status?, ...]
+                if (Array.isArray(item) && item.length > 2) {
+                    const id = item[0];
+                    const typeCode = item[1];
+                    let type = "unknown";
+
+                    if (typeCode === STUDIO_TYPE_CODES.AUDIO) type = "audio";
+                    if (typeCode === STUDIO_TYPE_CODES.VIDEO) type = "video";
+                    if (typeCode === STUDIO_TYPE_CODES.REPORT) type = "report";
+                    if (typeCode === STUDIO_TYPE_CODES.INFOGRAPHIC) type = "infographic";
+                    if (typeCode === STUDIO_TYPE_CODES.SLIDE_DECK) type = "slide_deck";
+                    if (typeCode === STUDIO_TYPE_CODES.FLASHCARDS) type = "flashcards";
+
+                    // Audio specifics: item[7][0] is status (2=done), item[7][1][0] might be duration?
+                    // This parsing is approximate based on structure observation
+                    artifacts.push({
+                        id,
+                        type,
+                        type_code: typeCode,
+                        raw: item
+                    });
+                }
+            });
+        }
+        return artifacts;
+    }
+
+    async deleteStudioArtifact(notebookId: string, artifactId: string): Promise<any> {
+        // RPC: V5N4be
+        // Params: [notebook_id, [artifact_id]]
+        const params = [notebookId, [artifactId]];
+        const body = await this._buildRequestBody(RPC_IDS.DELETE_STUDIO, params);
+        const response = await this.client.post(this._buildUrl(RPC_IDS.DELETE_STUDIO, `/notebook/${notebookId}`), body);
+        const res = this._parseBatchResponse(response.data);
+
+        // Success if we get something back, usually
+        return { success: true, raw: res };
     }
 
     async query(notebookId: string, queryText: string, conversationId?: string): Promise<any> {

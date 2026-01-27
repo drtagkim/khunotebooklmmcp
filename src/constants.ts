@@ -55,6 +55,15 @@ export const STUDIO_TYPES = {
     QUIZ: "quiz",
 } as const;
 
+export const STUDIO_TYPE_CODES = {
+    AUDIO: 1,
+    REPORT: 3,
+    VIDEO: 5,
+    INFOGRAPHIC: 6,
+    SLIDE_DECK: 7,
+    FLASHCARDS: 9,
+} as const;
+
 export const AUDIO_FORMATS = {
     DEEP_DIVE: "deep_dive",
     BRIEF: "brief",
