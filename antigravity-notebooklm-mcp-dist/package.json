@@ -1,16 +1,13 @@
 {
-  "name": "khu-notebook-research-mcp",
-  "version": "0.0.1",
-  "description": "Advanced Research Assistant MCP for NotebookLM. Developed by Taekyung Kim, PhD.",
-  "author": "Taekyung Kim, PhD. Professor, Kyung Hee University",
+  "name": "antigravity-notebooklm-mcp",
+  "version": "1.0.0",
+  "description": "",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
     "start": "node build/index.js",
-    "dev": "node --loader ts-node/esm src/index.ts",
-    "login": "node build/browser-auth.js",
-    "auth-manual": "node build/auth-cli.js"
+    "dev": "node --loader ts-node/esm src/index.ts"
   },
   "license": "ISC",
   "dependencies": {

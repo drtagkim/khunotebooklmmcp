@@ -1,89 +1,49 @@
-# Antigravity NotebookLM MCP
+# KHU Notebook Research Assistant (MCP)
 
-Advanced Model Context Protocol (MCP) server for Google NotebookLM. 
-Built for AI agents to autonomously research, manage knowledge bases, and generate multimedia artifacts using Google's NotebookLM engine.
+**Version:** 0.0.1 (2026-01-31)  
+**Author:** Taekyung Kim, PhD. Professor, Kyung Hee University
 
-## 🚀 Key Features
+## Overview
 
-*   **Robust Authentication**: 
-    *   **Browser Auth**: Safe, undetectable remote-debugging login flow (bypasses Google bot detection).
-    *   **Manual Auth**: Fallback for headless environments.
-*   **Deep Research**: Autonomous web research agent integration with automated source importing.
-*   **Full Notebook Management**: CRUD operations for Notebooks.
-*   **Advanced Source Control**: 
-    *   Add Text, URLs, PDFs, and Drive files.
-    *   **Sync**: Keep Drive sources up-to-date.
-    *   **Check Freshness**: Monitor source status.
-*   **Studio & Artifacts**: 
-    *   Generate **Audio Overviews**, **Mind Maps**, **Quizzes**, **Study Guides**.
-    *   Manage Studio: List and delete generated artifacts to keep projects clean.
-*   **Chat Configuration**: Set specific goals ("critique", "summary") and custom system prompts for your notebook.
+The **KHU Notebook Research Assistant** is a specialized Model Context Protocol (MCP) server designed to interface with Google NotebookLM. It empowers AI agents to conduct autonomous academic research, manage knowledge bases, and generate study artifacts efficiently.
 
-## 🛠️ Installation
+This project is tailored for research and educational purposes, enabling seamless integration between LLMs and NotebookLM's grounded reasoning capabilities.
+
+## Key Capabilities
+
+*   **Autonomous Deep Research**: Performs multi-step web research and automatically summarizes and imports findings into your notebook.
+*   **Study Artifact Generation**: Instantly creates derived materials from your sources:
+    *   Audio Overviews (Podcasts)
+    *   Research Reports
+    *   Infographics
+    *   Presentation Slides
+    *   Data Tables (Google Sheets)
+    *   Flashcards & Quizzes
+    *   Mind Maps
+*   **Knowledge Management**: Systematic control over notebook creation, source addition (URLs, Text, PDFs), and organization.
+
+## Installation
 
 ```bash
 npm install
 npm run build
 ```
 
-## 🔐 Authentication (The Antigravity Way)
+## Configuration
 
-This server overcomes common bot detection issues using a dedicated Chrome automation workflow.
+This server requires a valid Google session to interact with NotebookLM. 
+Session credentials (cookies) should be stored in `~/.notebooklm-mcp/auth.json` or passed via environment variables.
 
-### Method 1: Browser Auth (Recommended)
-This launches a specialized Chrome instance. You simply log in manually, and the MCP extracts the credentials automatically.
+## Tools Available
 
-```bash
-# Run the auth helper
-node build/browser-auth.js
-```
-
-### Method 2: Manual Token
-If you are on a headless server, you can manually inject cookies:
-
-1.  Open NotebookLM in your local browser.
-2.  Copy your `Cookie` header from DevTools (Network tab).
-3.  Use the `authenticate` tool in Claude/MCP with `method: "manual"`.
-
-Credentials are securely stored in `~/.notebooklm-mcp/auth.json`.
-
-## 📦 Usage with Claude Desktop
-
-Add to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "notebooklm": {
-      "command": "node",
-      "args": ["/absolute/path/to/antigravity-notebooklm-mcp/build/index.js"]
-    }
-  }
-}
-```
-
-## 🧰 Available Tools
-
-| Tool | Action | Description |
-|------|--------|-------------|
-| **manage_notebook** | `list`, `get`, `create`, `rename`, `delete`, `configure_chat` | Full lifecycle management. `configure_chat` sets prompts/goals. |
-| **manage_source** | `add`, `rename`, `delete`, `sync`, `check_freshness` | Manage knowledge sources. Supports syncing Drive files. |
-| **manage_studio** | `list`, `delete` | Manage generated artifacts (Audio, Video, Mind Maps). |
-| **query_notebook** | N/A | Ask questions grounded in your sources. |
-| **perform_deep_research** | N/A | Execute multi-step deep web research and import findings. |
-| **generate_artifact** | `audio`, `video`, `quiz`, `slides`, `mind_map`... | Generate multimedia content from your notes. |
-| **authenticate** | `browser`, `manual` | Update session credentials. |
-
-## 🏗️ Architecture
-
-This project uses a direct reverse-engineered RPC client (`NotebookLMClient`) wrapped in an **MCP Server**. 
-It includes an **Orchestrator** layer for handling complex, multi-step asynchronous operations like Deep Research and Polling.
-
-## ⚠️ Notes
-
-*   **Deep Research** operations can take 3-5 minutes. The server handles polling, but be patient.
-*   **Audio Generation** is a heavy task; ensure you have enough sources before generating.
+| Tool | Description |
+|------|-------------|
+| `research_notebook_list` | Lists all active research notebooks. |
+| `research_deep_search` | Conducts deep web research on a specific topic. |
+| `generate_study_material` | Generates artifacts like Slides, Reports, or Audio. |
+| `add_source_content` | Injects new research materials (URLs, Text) into the notebook. |
 
 ## License
 
-MIT
+Private / Academic Use Only.
+Copyright (c) 2026 Taekyung Kim, PhD. All Rights Reserved.

@@ -1,14 +1,14 @@
-import { NotebookLMClient } from './api-client.js';
-import { NotebookOrchestrator } from './orchestrator.js';
+import { NotebookSessionManager } from './session-manager.js';
+import { ArtifactProcessor } from './processor.js';
 import fs from 'fs';
 import path from 'path';
 
-async function verifyResearch() {
+async function main() {
     const home = process.env.HOME || process.env.USERPROFILE || "";
     const authPath = path.join(home, ".notebooklm-mcp", "auth.json");
 
     if (!fs.existsSync(authPath)) {
-        console.error("❌ No auth file found");
+        console.error("Auth file not found");
         return;
     }
 
@@ -16,30 +16,35 @@ async function verifyResearch() {
     const cookies = Object.entries(data.cookies).map(([k, v]) => `${k}=${v}`).join("; ");
     const csrfToken = data.csrf_token;
 
-    const client = new NotebookLMClient({ cookies, csrfToken });
-    const orchestrator = new NotebookOrchestrator(client);
+    const client = new NotebookSessionManager({ cookieHeader: cookies, csrfToken });
+    const processor = new ArtifactProcessor(client);
+
+    const NOTEBOOK_ID = "0270302e-7920-4dcd-adec-aec2055ea107"; // 문화콘텐츠 지수 개발
+    const QUERY = "문화콘텐츠 지수 개발";
+
+    console.log(`Starting Deep Search for notebook: ${NOTEBOOK_ID}`);
+    console.log(`Query: ${QUERY}`);
+
+    // Explicitly refresh session / get CSRF
+    try {
+        console.log("Refreshing session to get CSRF token...");
+        const csrf = await client.refreshSession();
+        console.log(`CSRF Token retrieved: ${csrf.substring(0, 10)}... (Length: ${csrf.length})`);
+    } catch (e) {
+        console.error("Failed to refresh session/get CSRF token!");
+        console.error(e);
+        return;
+    }
 
     try {
-        console.log("🚀 Testing Deep Research (Fast Mode first for speed)...");
-        const createRes = await client.createNotebook("RESEARCH_VERIFY");
-        const notebookId = createRes[2];
-        console.log(`Created notebook: ${notebookId}`);
-
-        console.log("Starting research on 'Model Context Protocol'...");
-        // Use 'fast' mode - deep mode seems to require special conditions
-        const result = await orchestrator.performDeepWebResearch(notebookId, "What is Model Context Protocol?", 'fast');
-
-        console.log("\n✅ Research Success!");
-        console.log(`Imported ${result.importedCount} sources.`);
-        console.log("Sample Result Summary:", result.task.summary?.substring(0, 300));
-
-        // Cleanup
-        // await client.deleteNotebook(notebookId);
-        // console.log("Cleaned up.");
-
-    } catch (e: any) {
-        console.error("❌ Research Verification Failed:", e.message);
+        const result = await processor.executeDeepResearch(NOTEBOOK_ID, QUERY);
+        console.log("\n✅ Deep Research Completed Successfully!");
+        console.log(`Sources Added: ${result.sourceCount}`);
+        console.log("\nSummary of Findings:\n");
+        console.log(result.summary);
+    } catch (error) {
+        console.error("\n❌ Research Failed:", error);
     }
 }
 
-verifyResearch();
+main().catch(console.error);

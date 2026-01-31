@@ -53,7 +53,7 @@ export class NotebookOrchestrator {
 
     async generateArtifact(
         notebookId: string,
-        type: 'audio' | 'video' | 'quiz' | 'slides' | 'infographic' | 'report' | 'mind_map',
+        type: 'audio' | 'video' | 'quiz' | 'slides' | 'infographic' | 'report' | 'mind_map' | 'data_table' | 'flashcards',
         config: any
     ): Promise<any> {
         console.error(`Generating ${type} artifact for notebook ${notebookId}`);
@@ -69,10 +69,11 @@ export class NotebookOrchestrator {
             case 'audio': studioType = STUDIO_TYPES.AUDIO; break;
             case 'video': studioType = STUDIO_TYPES.VIDEO; break;
             case 'quiz': studioType = STUDIO_TYPES.QUIZ; break;
-            // study_guide could be slides or infographic depending on config, default to study_guide
-            case 'slides': studioType = STUDIO_TYPES.STUDY_GUIDE; break;
-            case 'infographic': studioType = STUDIO_TYPES.STUDY_GUIDE; break;
-            case 'report': studioType = STUDIO_TYPES.STUDY_GUIDE; break;
+            case 'slides': studioType = STUDIO_TYPES.SLIDE_DECK; break;
+            case 'infographic': studioType = STUDIO_TYPES.INFOGRAPHIC; break;
+            case 'report': studioType = STUDIO_TYPES.REPORT; break;
+            case 'data_table': studioType = STUDIO_TYPES.DATA_TABLE; break;
+            case 'flashcards': studioType = STUDIO_TYPES.FLASHCARDS; break;
             default:
                 throw new Error(`Unsupported artifact type: ${type}`);
         }

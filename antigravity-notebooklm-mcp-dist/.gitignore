@@ -1,0 +1,14 @@
+node_modules/
+build/
+*.log
+.env
+*.tgz
+
+# Debug and test files
+debug-test.ts
+diagnose-api.ts
+test-compiled.js
+reference_api_client.py
+
+# Auth files (never commit!)
+~/.notebooklm-mcp/

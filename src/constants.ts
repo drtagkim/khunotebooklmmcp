@@ -1,72 +1,59 @@
-export const RPC_IDS = {
-    LIST_NOTEBOOKS: "wXbhsf",
-    GET_NOTEBOOK: "rLM1Ne",
-    CREATE_NOTEBOOK: "CCqFvf",
-    RENAME_NOTEBOOK: "s0tc2d",
-    DELETE_NOTEBOOK: "WWINqb",
-    ADD_SOURCE: "izAoDd",
-    GET_SOURCE: "hizoJc",
-    CHECK_FRESHNESS: "yR9Yof",
-    SYNC_DRIVE: "FLmJqe",
-    DELETE_SOURCE: "tGMBJ",
-    RENAME_SOURCE: "b7Wfje",
-    GET_CONVERSATIONS: "hPTbtc",
-    PREFERENCES: "hT54vc",
-    SUBSCRIPTION: "ozz5Z",
-    SETTINGS: "ZwVcOc",
-    GET_SUMMARY: "VfAZjd",
-    GET_SOURCE_GUIDE: "tr032e",
-    START_FAST_RESEARCH: "Ljjv0c",
-    START_DEEP_RESEARCH: "QA9ei",
-    POLL_RESEARCH: "e3bVqc",
-    IMPORT_RESEARCH: "LBwxtb",
-    CREATE_STUDIO: "R7cb6c",
-    POLL_STUDIO: "gArtLc",
-    DELETE_STUDIO: "V5N4be",
-    GENERATE_MIND_MAP: "yyryJe",
-    SAVE_MIND_MAP: "CYK0Xb",
-    LIST_MIND_MAPS: "cFji9",
-    DELETE_MIND_MAP: "AH0mwd",
+
+export const NOTEBOOK_ENDPOINTS = {
+    LIST: "wXbhsf",
+    GET_DETAILS: "rLM1Ne",
+    CREATE: "CCqFvf",
+    RENAME: "s0tc2d",
+    DELETE: "WWINqb",
+    SOURCE_ADD: "izAoDd",
+    SOURCE_GET: "hizoJc",
+    SOURCE_FRESHNESS: "yR9Yof",
+    SOURCE_SYNC: "FLmJqe",
+    SOURCE_DELETE: "tGMBJ",
+    SOURCE_RENAME: "b7Wfje",
+    CONVERSATIONS: "hPTbtc",
+    USER_SETTINGS: "hT54vc", // PREFERENCES
+    NOTIFICATIONS: "ozz5Z", // SUBSCRIPTION
+    APP_SETTINGS: "ZwVcOc",
+    SUMMARY_GEN: "VfAZjd",
+    SOURCE_GUIDE: "tr032e",
+    RESEARCH_FAST: "Ljjv0c",
+    RESEARCH_DEEP: "QA9ei",
+    RESEARCH_POLL: "e3bVqc",
+    RESEARCH_IMPORT: "LBwxtb",
+    STUDIO_CREATE: "R7cb6c",
+    STUDIO_POLL: "gArtLc",
+    STUDIO_DELETE: "V5N4be",
+    MIND_MAP_GEN: "yyryJe",
+    MIND_MAP_SAVE: "CYK0Xb",
+    MIND_MAP_LIST: "cFji9",
+    MIND_MAP_DELETE: "AH0mwd",
 } as const;
 
-export const RESULT_TYPES = {
-    WEB: 1,
-    GOOGLE_DOC: 2,
-    GOOGLE_SLIDES: 3,
-    DEEP_REPORT: 5,
-    GOOGLE_SHEETS: 8,
+export const ARTIFACT_CODE_MAP = {
+    AUDIO_OVERVIEW: 1,
+    REPORT_DOC: 3,
+    VIDEO_OVERVIEW: 5,
+    INFOGRAPHIC_IMAGE: 6,
+    PRESENTATION_SLIDES: 7,
+    DATA_SHEET: 8,
+    FLASHCARD_SET: 9,
 } as const;
 
-export const SOURCE_TYPES = {
-    WEB: 1,
-    DRIVE: 4,
-} as const;
-
-export const RESEARCH_MODES = {
-    FAST: "fast",
-    DEEP: "deep",
-} as const;
-
-export const STUDIO_TYPES = {
+export const ARTIFACT_KEYS = {
     AUDIO: "audio",
     VIDEO: "video",
-    MIND_MAP: "mind_map",
+    MINDMAP: "mind_map",
     STUDY_GUIDE: "study_guide",
     QUIZ: "quiz",
+    REPORT: "report",
+    INFOGRAPHIC: "infographic",
+    SLIDES: "slide_deck",
+    TABLE: "google_sheets",
+    CARDS: "flashcards",
 } as const;
 
-export const STUDIO_TYPE_CODES = {
-    AUDIO: 1,
-    REPORT: 3,
-    VIDEO: 5,
-    INFOGRAPHIC: 6,
-    SLIDE_DECK: 7,
-    FLASHCARDS: 9,
-} as const;
-
-export const AUDIO_FORMATS = {
-    DEEP_DIVE: "deep_dive",
-    BRIEF: "brief",
-    CRITIQUE: "critique",
-    DEBATE: "debate",
+export const RESEARCH_STRATEGIES = {
+    QUICK: "fast",
+    COMPREHENSIVE: "deep",
 } as const;

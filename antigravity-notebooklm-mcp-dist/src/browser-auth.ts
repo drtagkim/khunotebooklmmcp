@@ -14,7 +14,6 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import http from 'http';
-import { fileURLToPath } from 'url';
 
 export interface AuthTokens {
     cookies: Record<string, string>;
@@ -353,10 +352,7 @@ async function main() {
 }
 
 // Run if executed directly
-// Run if executed directly
-const currentFilePath = fileURLToPath(import.meta.url);
-const executedFilePath = process.argv[1];
-
-if (path.resolve(currentFilePath) === path.resolve(executedFilePath)) {
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+if (isMainModule) {
     main();
 }
